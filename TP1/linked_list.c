@@ -35,21 +35,21 @@ Node* create_linked_list(int n) {
 int linked_list_length(Node* head) {
     int length = 0;
     Node* current = head;
-
-    while (current != NULL) {
+    for (current = head; current != NULL; current = current->next)
+    {
         length++;
-        current = current->next;
     }
-
+    
     return length;
 }
 
 void print_linked_list(Node* head) {
     Node* current = head;
-    while (current != NULL) {
+    for ( current = head; current != NULL; current = current->next)
+    {
         printf("<%p> %d\n",current, current->data);
-        current = current->next;
     }
+    
     printf("NULL\n");
 }
 
@@ -109,15 +109,23 @@ void push_to_end(Node** head, Node* new_node) {
 
 Node* concat_lists(Node* list1, Node* list2) {
     if (list1 == NULL) return list2;
+
     Node* current = list1;
     while (current->next != NULL) {
-        current = current->next;
+        current = current->next; 
     }
     current->next = list2;
     return list1;
-} 
+}
 
-
+Node* apply_function_to_list(Node* head, int (*func)(int)) {
+    Node* current = head;
+    for (current = head; current != NULL; current = current->next)
+    {
+        current->data = func(current->data);
+    }
+    return head;
+}
 
 void push_to_beginning(Node** head, Node* new_node) {
     new_node->next = *head;
@@ -152,12 +160,10 @@ int main() {
     Node* list2 = create_linked_list(5);
     printf("Second list:\n");
     print_linked_list(list2);
-    Node* concatenated = concat_lists(list, list2);
+    list = concat_lists(list, list2);
     printf("After concatenation:\n");
-    print_linked_list(concatenated);
+    print_linked_list(list);
 
     free_linked_list(list);
-    free_linked_list(list2);
-    free_linked_list(concatenated);
     return 0;
-}
+}  
