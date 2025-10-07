@@ -48,25 +48,35 @@ void print_list(HEADER* head) {
     }
 }
 
-void* malloc_3is(size_t size, HEADER** list) {
+void* malloc_3is(size_t size) {
     size_t total_size = sizeof(HEADER) + size + sizeof(long);
-    HEADER* block = (HEADER*)sbrk(total_size);
-    if (block == (void*)-1) return NULL;
-    block->ptr_next = NULL;
-    block->bloc_size = size;
-    block->magic_number = 0x0123456789ABCDEFL;
-    insert_block(list, block);
-    return (void*)((char*)block + sizeof(HEADER));
+    HEADER* header = (HEADER*)sbrk(total_size);
+    if (header == (void*)-1) {
+        return NULL;
+    }
+
+    header->ptr_next = NULL;
+    header->bloc_size = size;
+    header->magic_number = 0x0123456789ABCDEFL;
+    long* footer = (long*) (((void*)header) + sizeof(HEADER) + size);
+    *footer = 0x0123456789ABCDEFL;
+    return (void*)(header + 1);
 }
 
+
+
 int main() {
-    HEADER* my_list = init_list();
-    HEADER* block1 = malloc_3is(100, &my_list);
-    HEADER* block2 = malloc_3is(200, &my_list);
-    HEADER* block3 = malloc_3is(100, &my_list);
-    HEADER* block4 = malloc_3is(300, &my_list);
-    HEADER* block5 = malloc_3is(400, &my_list);
-    print_list(my_list);
+    void* ptr1 = malloc_3is(1<<8);
+    void* ptr2 = malloc_3is(1<<10);
+    void* ptr3 = malloc_3is(1<<12);
 
+    HEADER* block1 = (void*)ptr1 - sizeof(HEADER);
+    HEADER* block2 = (void*)ptr2 - sizeof(HEADER);
+    HEADER* block3 = (void*)ptr3 - sizeof(HEADER);
 
+    printf("Block1 at %p, size: %zu, magic: %lx\n", (void*)block1, block1->bloc_size, block1->magic_number);
+    printf("Block2 at %p, size: %zu, magic: %lx\n", (void*)block2, block2->bloc_size, block2->magic_number);
+    printf("Block3 at %p, size: %zu, magic: %lx\n", (void*)block3, block3->bloc_size, block3->magic_number);
+
+    return 0;
 }
