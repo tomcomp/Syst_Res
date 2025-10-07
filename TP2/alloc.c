@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <stdbool.h>
+#include <string.h>
 
 typedef struct HEADER_TAG {
     struct HEADER_TAG * ptr_next; /* pointe sur le prochain bloc libre */
@@ -50,6 +52,14 @@ void* malloc_3is(size_t size) {
     return (void*)(header + 1);
 }
 
+bool check_block(HEADER* block) {
+
+    long* footer = (long*) (((void*)block) + sizeof(HEADER) + block->bloc_size);
+    if (*footer != block->magic_number) {
+        return false;
+    }
+    return true;
+}
 
 
 int main() {
@@ -69,11 +79,29 @@ int main() {
     printf("Block2 at %p, size: %zu, magic: %lx\n", (void*)block2, block2->bloc_size, block2->magic_number);
     printf("Block3 at %p, size: %zu, magic: %lx\n", (void*)block3, block3->bloc_size, block3->magic_number);
 
+    printf("===================================\n");
     insert_block(&free_list, block1);
     insert_block(&free_list, block2);
 
-    printf("\nFree list after inserting block1 and block2:\n");
+    printf("Free list after inserting block1 and block2:\n");
     print_list(free_list);
+
+    printf("===================================\n");
+
+    if (check_block(block1)) {
+        printf("Block1 is valid.\n");
+    } else {
+        printf("Block1 is corrupted!\n");
+    }
+
+    memset(ptr2, 0xFF, 1<<10); // Simulate corruption
+
+    if (check_block(block2)) {
+        printf("Block2 is valid.\n");
+    } else {
+        printf("Block2 is corrupted!\n");
+    }
+    printf("===================================\n");
 
     return 0;
 }
