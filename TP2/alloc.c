@@ -32,6 +32,26 @@ bool check_block(HEADER* block) {
     return true;
 }
 
+HEADER* split_block(HEADER* block, size_t size) {
+    size_t remaining_size = block->bloc_size - size - sizeof(HEADER) - sizeof(long);
+    if (remaining_size < sizeof(HEADER) + sizeof(long)) {
+        return NULL;
+    }
+
+    HEADER* new_block = (HEADER*) (((void*)block) + sizeof(HEADER) + size + sizeof(long));
+    new_block->ptr_next = block->ptr_next;
+    new_block->bloc_size = remaining_size;
+    new_block->magic_number = MAGIC_NUMBER;
+    long* new_footer = (long*) (((void*)new_block) + sizeof(HEADER) + remaining_size);
+    *new_footer = MAGIC_NUMBER;
+
+    block->bloc_size = size;
+    long* footer = (long*) (((void*)block) + sizeof(HEADER) + size);
+    *footer = MAGIC_NUMBER;
+
+    return new_block;
+}
+
 HEADER* find_fit(size_t size) {
     HEADER* curr = free_list;
     HEADER* prev = NULL;
@@ -45,6 +65,24 @@ HEADER* find_fit(size_t size) {
             }
             return curr;
         }
+
+        if (curr->bloc_size > size && check_block(curr)) {
+            HEADER* new_block = split_block(curr, size);
+            if (new_block) {
+                if (prev) {
+                    prev->ptr_next = new_block;
+                } else {
+                    free_list = new_block;
+                }
+            } else {
+                if (prev) {
+                    prev->ptr_next = curr->ptr_next;
+                } else {
+                    free_list = curr->ptr_next;
+                }
+            }
+            return curr;
+        }
         prev = curr;
         curr = curr->ptr_next;
     }
@@ -54,6 +92,7 @@ HEADER* find_fit(size_t size) {
 void* malloc_3is(size_t size) {
     HEADER* header = find_fit(size);
     if (header) {
+        header->ptr_next = NULL;
         return (void*)(header + 1);
     }
 
@@ -80,8 +119,18 @@ void free_3is(void* ptr) {
         return;
     }
 
-    block->ptr_next = free_list;
-    free_list = block;
+    HEADER* curr = free_list;
+    HEADER* prev = NULL;
+    while (curr && curr->bloc_size < block->bloc_size) {
+        prev = curr;
+        curr = curr->ptr_next;
+    }
+    block->ptr_next = curr;
+    if (prev) {
+        prev->ptr_next = block;
+    } else {
+        free_list = block;
+    }
 }
 
 
