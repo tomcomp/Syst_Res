@@ -58,7 +58,6 @@ HEADER* find_fit(size_t size) {
     HEADER* prev = NULL;
 
     while (curr) {
-        
         if (curr->bloc_size == size && check_block(curr)) {
             if (prev) {
                 prev->ptr_next = curr->ptr_next;
@@ -189,6 +188,6 @@ int main() {
 
     printf("===================================\n");
 
-    
+
     return 0;
 }
