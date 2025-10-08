@@ -33,10 +33,11 @@ bool check_block(HEADER* block) {
 }
 
 HEADER* split_block(HEADER* block, size_t size) {
-    size_t remaining_size = block->bloc_size - size - sizeof(HEADER) - sizeof(long);
-    if (remaining_size < sizeof(HEADER) + sizeof(long)) {
+    if (block->bloc_size <= size + sizeof(HEADER) + sizeof(long)) {
         return NULL;
     }
+
+    size_t remaining_size = block->bloc_size - size - sizeof(HEADER) - sizeof(long);
 
     HEADER* new_block = (HEADER*) (((void*)block) + sizeof(HEADER) + size + sizeof(long));
     new_block->ptr_next = block->ptr_next;
@@ -57,6 +58,7 @@ HEADER* find_fit(size_t size) {
     HEADER* prev = NULL;
 
     while (curr) {
+        
         if (curr->bloc_size == size && check_block(curr)) {
             if (prev) {
                 prev->ptr_next = curr->ptr_next;
@@ -162,19 +164,31 @@ int main() {
     printf("CORRUPTED_FREE: %d\n", CORRUPTED_FREE);
 
     printf("===================================\n");
-
-    void* ptr4 = malloc_3is(250);
-    void* ptr5 = malloc_3is(256);
+    void* ptr4 = malloc_3is(256);
+    void* ptr5 = malloc_3is(1024);
     HEADER* block4 = (void*)ptr4 - sizeof(HEADER);
     HEADER* block5 = (void*)ptr5 - sizeof(HEADER);
     printf("Allocated block4 at %p, size: %zu, magic: %lx\n", (void*)block4, block4->bloc_size, block4->magic_number);
     printf("Allocated block5 at %p, size: %zu, magic: %lx\n", (void*)block5, block5->bloc_size, block5->magic_number);
 
-    free_3is(ptr4);
-    printf("Free list after allocating block4 and block5 and then block4 freed:\n");
+    free_3is(ptr5);
+    printf("Free list after allocating block4 and block5 and then block5 freed:\n");
     print_list(free_list);
 
     printf("===================================\n");
 
+    void* ptr6 = malloc_3is(256);
+    HEADER* block6 = (void*)ptr6 - sizeof(HEADER);
+    printf("Allocated block6 at %p, size: %zu, magic: %lx\n", (void*)block6, block6->bloc_size, block6->magic_number);
+    printf("Free list after allocating block6:\n");
+    print_list(free_list);
+
+    free_3is(ptr6);
+    printf("Free list after freeing block6:\n");
+    print_list(free_list);
+
+    printf("===================================\n");
+
+    
     return 0;
 }
